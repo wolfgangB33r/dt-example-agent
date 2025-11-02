@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 from dotenv import load_dotenv
@@ -8,13 +9,15 @@ from langchain_community.callbacks.manager import get_openai_callback
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 
-AGENT_NAME = "Santa"
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+AGENT_NAME = "Sherlock"
 
 AGENT_INSTRUCTIONS = f"""
-You are **{AGENT_NAME}**, a helpful agent.
-**Instructions:**
-1. **Do not ask follow-up questions**—handle the request based on the loaded context.
+You are **{AGENT_NAME}**, a helpful agent. You don't ask for clarification, you just try to help the user as best as you can.
 """
+
+
 
 def get_current_time() -> dict:
     """Returns the current date and time.
@@ -33,7 +36,23 @@ def get_current_time() -> dict:
     )
     return {"status": "success", "report": report}
 
-def request(msg):
+def chat_response(prompt: str) -> str:
+    """Fallback: generate a natural language response to any prompt.
+    
+    Args:
+        prompt (str): The input prompt to generate a response for.
+    Returns:
+        str: The generated response.
+    """
+    # Google models
+    if os.getenv("LLM_MODEL") == "google":
+        model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+    else:
+        # OpenAI models
+        model = init_chat_model("gpt-4o", model_provider="openai")
+    return model.invoke(prompt)
+
+def answer(msg):
     try:
         # Google models
         if os.getenv("LLM_MODEL") == "google":
@@ -41,9 +60,8 @@ def request(msg):
         else:
             # OpenAI models
             model = init_chat_model("gpt-4o", model_provider="openai")
-        
         tools=[
-            get_current_time,
+            get_current_time, chat_response
         ]
         agent_executor = create_react_agent(
             model, 
@@ -78,6 +96,36 @@ def request(msg):
     except Exception as e:
         return {"status": "error", "response": e.message}
 
+
+class SimpleTextHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        # Get content length
+        content_length = int(self.headers.get('Content-Length', 0))
+        # Read the posted data
+        post_data = self.rfile.read(content_length)
+
+        text = post_data.decode('utf-8')
+        
+        result_json = answer(text)
+
+        response = json.dumps({"result": result_json}).encode('utf-8')
+
+        # Send response headers
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(response)))
+        self.end_headers()
+
+        # Send the response body
+        self.wfile.write(response)
+
+def run(server_class=HTTPServer, handler_class=SimpleTextHandler, port=8080):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f"Serving on port {port}...")
+    httpd.serve_forever()
+
+
 ## main routine
 if __name__ == "__main__":
-    print(request("What is the current date and time?"))
+    run()

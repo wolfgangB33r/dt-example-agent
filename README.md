@@ -1,3 +1,10 @@
 # An Example Agent
 
-An example react agent
+An example react agent, served as a HTTP service.
+
+## Example usage
+
+```bash
+curl -X POST -H "Content-Type: text/plain" --data "How late is it?" http://localhost:8080      
+```
+
