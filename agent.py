@@ -17,8 +17,6 @@ AGENT_INSTRUCTIONS = f"""
 You are **{AGENT_NAME}**, a helpful agent. You don't ask for clarification, you just try to help the user as best as you can.
 """
 
-
-
 def get_current_time() -> dict:
     """Returns the current date and time.
 
@@ -28,7 +26,6 @@ def get_current_time() -> dict:
     Returns:
         dict: status and result or error msg.
     """
-    print("test")
     now = datetime.now()
     
     report = (
@@ -37,7 +34,7 @@ def get_current_time() -> dict:
     return {"status": "success", "report": report}
 
 def chat_response(prompt: str) -> str:
-    """Fallback: generate a natural language response to any prompt.
+    """Fallback: Generate a natural language response to any prompt.
     
     Args:
         prompt (str): The input prompt to generate a response for.
@@ -96,7 +93,6 @@ def answer(msg):
     except Exception as e:
         return {"status": "error", "response": e.message}
 
-
 class SimpleTextHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         # Get content length
@@ -124,7 +120,6 @@ def run(server_class=HTTPServer, handler_class=SimpleTextHandler, port=8080):
     httpd = server_class(server_address, handler_class)
     print(f"Serving on port {port}...")
     httpd.serve_forever()
-
 
 ## main routine
 if __name__ == "__main__":

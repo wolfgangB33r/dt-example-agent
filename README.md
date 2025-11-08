@@ -1,6 +1,6 @@
 # An Example Agent
 
-An example react agent, served as a HTTP service.
+An example AI agent, served as a HTTP service.
 
 ## Example usage
 
