@@ -1,10 +1,30 @@
-# An Example Agent
+# Alert Optimizer Agent
 
-An example AI agent, served as a HTTP service.
+AI agent for optimizing alert configurations in a Dynatrace tenant.
 
-## Example usage
+## Count Alerts per Setting
 
-```bash
-curl -X POST -H "Content-Type: text/plain" --data "How late is it?" http://localhost:8080      
+Check how many alerts were triggered by each alert configuration.
+
+```dql
+fetch dt.davis.events, from:-24h, to:now()
+| filter isNotNull(dt.settings.object_id)
+| summarize count=count(), by:{dt.settings.object_id, dt.settings.schema_id, event.name, event.category}
 ```
 
+## Count Alerts per Entity
+
+Identify overalerting by counting how many alerts per entity were triggered by a specific alert.
+
+```dql
+fetch dt.davis.events, from:-2h, to:now()
+| filter dt.settings.object_id == "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkMDFlZGQxMWYtNDE2Ni0zOTA1LWFlZDUtMTc2M2U5NzU2OWY5vu9U3hXa3q0"
+| summarize count=count(), by:{dt.source_entity, dt.source.entity.name}
+```
+
+## Optimize Spammy Alerts
+
+Inspect the alert setting (threshold, DQL, observation window). Optimize by:
+* Switching model (e.g., seasonal baseline vs. static threshold)
+* Adjusting threshold/sensitivity
+* Expanding sliding window or required violating samples to filter noise
