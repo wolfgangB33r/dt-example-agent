@@ -1,6 +1,6 @@
 # Alert Optimizer Agent
 
-AI agent for optimizing alert configurations in a Dynatrace tenant.
+AI agent for optimizing alert configurations in a Dynatrace tenant. In the final answer you always replace the settings object id with the event.name.
 
 ## Count Alerts per Setting
 
