@@ -89,13 +89,13 @@ def query_dynatrace_dql(dql_query: str) -> dict:
         "query": dql_query,
         "timezone": "UTC",
         "locale": "en_US",
-        "maxResultRecords": 1000,
+        "maxResultRecords": 100,
         "maxResultBytes": 1000000,
         "fetchTimeoutSeconds": 60,
-        "requestTimeoutMilliseconds": 1000,
+        "requestTimeoutMilliseconds": 5000,
         "enablePreview": True,
         "defaultSamplingRatio": 1,
-        "defaultScanLimitGbytes": 100,
+        "defaultScanLimitGbytes": -1,
         "queryOptions": None,
         "filterSegments": None
     }
@@ -146,7 +146,7 @@ def answer(msg):
         }
 
         # load the text in the README.md file
-        readme_path = os.path.join(os.path.dirname(__file__), "README.md")
+        readme_path = os.path.join(os.path.dirname(__file__), "instructions.md")
         try:
             with open(readme_path, "r", encoding="utf-8") as f:
                 instructions_text = f.read()
@@ -208,4 +208,4 @@ def run(server_class=HTTPServer, handler_class=SimpleTextHandler, port=8080):
 ## main routine
 if __name__ == "__main__":
     #run()
-    print(answer("What are the most spammy alerts in my Dynatrace environment in the last 2 hours?"))
+    print(answer("Is there a significant difference between alert spam last week and today?"))

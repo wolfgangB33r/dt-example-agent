@@ -2,29 +2,21 @@
 
 AI agent for optimizing alert configurations in a Dynatrace tenant. In the final answer you always replace the settings object id with the event.name.
 
-## Count Alerts per Setting
+## How to set up?
 
-Check how many alerts were triggered by each alert configuration.
+The agent is designed to run as a scheduled, autonomous job that can be deployed in a dockerized job runtime environment
+such as Google Cloud Run Job.
 
-```dql
-fetch dt.davis.events, from:-24h, to:now()
-| filter isNotNull(dt.settings.object_id)
-| summarize count=count(), by:{dt.settings.object_id, dt.settings.schema_id, event.name, event.category}
-```
+Following environment variables must be set:
 
-## Count Alerts per Entity
+One of the following:
+* OPENAI_API_KEY=YOUR_KEY
+* GOOGLE_API_KEY=YOUr_KEY
+Selection of the model to use:
+* LLM_MODEL=google
 
-Identify overalerting by counting how many alerts per entity were triggered by a specific alert.
-
-```dql
-fetch dt.davis.events, from:-2h, to:now()
-| filter dt.settings.object_id == "vu9U3hXa3q0AAAABAB9idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAAZ0ZW5hbnQABnRlbmFudAAkMDFlZGQxMWYtNDE2Ni0zOTA1LWFlZDUtMTc2M2U5NzU2OWY5vu9U3hXa3q0"
-| summarize count=count(), by:{dt.source_entity, dt.source.entity.name}
-```
-
-## Optimize Spammy Alerts
-
-Inspect the alert setting (threshold, DQL, observation window). Optimize by:
-* Switching model (e.g., seasonal baseline vs. static threshold)
-* Adjusting threshold/sensitivity
-* Expanding sliding window or required violating samples to filter noise
+Dynatrace
+* DT_SETTINGS_API_URL=https://<YOUR_DOMAIN>.live.dynatrace.com/api/v2/settings/objects/
+* DT_SETTINGS_API_KEY=<YOUR_API_TOKEN>
+* DT_DQL_API_URL=https://<YOUR_DOMAIN>.live.apps.dynatrace.com/platform/storage/query/v1/query:execute?enrich=metric-metadata
+* DT_DQL_API_KEY=<YOUR_PLATFORM_API_TOKEN>
