@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE $PORT
 
-# Run the agent
+# Run the flask app (new)
 CMD ["python", "agent.py"]
