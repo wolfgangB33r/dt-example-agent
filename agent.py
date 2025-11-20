@@ -12,7 +12,7 @@ from langgraph.prebuilt import create_react_agent
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-AGENT_NAME = "Sherlock"
+AGENT_NAME = "Helsinki"
 
 AGENT_INSTRUCTIONS = f"""
 You are **{AGENT_NAME}**, a helpful agent. You don't ask for confirmation, you always execute the necessary tools and DQL queries.
