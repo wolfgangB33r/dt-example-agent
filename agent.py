@@ -1,16 +1,33 @@
 import json
 import os
-import requests
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
+from langchain_mcp_adapters.client import MultiServerMCPClient  
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 AGENT_NAME = "Helsinki"
+
+# Load environment variables
+DT_TENANT = os.getenv('DT_TENANT')
+DT_API_TOKEN = os.getenv('DT_API_TOKEN')
+
+client = MultiServerMCPClient(  
+    {
+        "dynatrace-mcp": {
+            "transport": "streamable_http",  
+            "url": 'https://{tenant}/platform-reserved/mcp-gateway/v0.1/servers/dynatrace-mcp/mcp'.format(tenant=DT_TENANT),
+            "headers": {
+                "Authorization": "Bearer {token}".format(token=DT_API_TOKEN)
+            }
+        }
+    }
+)
+ 
 
 def get_current_time() -> dict:
     """Returns the current date and time.
@@ -22,11 +39,8 @@ def get_current_time() -> dict:
         dict: status and result or error msg.
     """
     now = datetime.now()
-    
-    report = (
-        f'The current date and time is {now.strftime("%Y-%m-%d %H:%M:%S %Z%z")}'
-    )
-    return {"status": "success", "report": report}
+    report = ( f'The current date and time is {now.strftime("%Y-%m-%d %H:%M:%S %Z%z")}' )
+    return { "status": "success", "report": report }
 
 def chat_response(prompt: str) -> str:
     """Fallback: Generate a natural language response to any prompt.
@@ -36,7 +50,6 @@ def chat_response(prompt: str) -> str:
     Returns:
         str: The generated response.
     """
-    
     model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
     return model.invoke(prompt)
 
@@ -53,15 +66,20 @@ def load_instructions():
         instructions_text = f"<unable to load instructions.md: {e}>"
     return instructions_text
 
-def answer(msg, thread_id):
+async def answer(msg, thread_id):
+    total_input_tokens = 0
+    total_output_tokens = 0
     try:
         # Initiate the agent model and tools
         model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+        # 
+        mcp_tools = await client.get_tools() 
+    
         tools=[
             get_current_time, 
             chat_response
         ]
-        agent_executor = create_react_agent(model, tools, debug=False)
+        agent_executor = create_react_agent(model, mcp_tools, debug=False)
         
         config = {
             "configurable": {
@@ -72,14 +90,13 @@ def answer(msg, thread_id):
         }
 
         input_messages = [
-            { "role": "system", "content": "You are a helpful AI assistant. Use the tools to answer user questions." },
+            { "role": "system", "content": load_instructions() },
             { "role": "user", "content": msg }
         ]
 
         # invoke the agent and pass callbacks
         response = agent_executor.invoke({"messages": input_messages}, config=config)
-        total_input_tokens = 0
-        total_output_tokens = 0
+       
         for msg in response["messages"]:
             if hasattr(msg, "usage_metadata"):
                 total_input_tokens += msg.usage_metadata.get("input_tokens", 0)
@@ -125,5 +142,6 @@ def run(server_class=HTTPServer, handler_class=SimpleTextHandler, port=8080):
 
 ## main routine
 if __name__ == "__main__":
+    import asyncio
     #run()
-    print(answer("Tell me a joke", thread_id="test-thread-001"))
+    print(asyncio.run(answer("List all your tools", thread_id="test-thread-001")))
