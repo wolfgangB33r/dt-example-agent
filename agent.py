@@ -130,7 +130,6 @@ if __name__ == "__main__":
     # Generate a random thread id for this session
     print("Helsinki Agent is running. Type 'exit' to quit.")
     session_id = "local-session-00" + str(os.getpid())
-    print("Session ID:", session_id)
     # Loop for asking the user for input
     while True:
         user_input = input("?: ")
