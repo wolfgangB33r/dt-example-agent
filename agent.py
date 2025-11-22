@@ -6,7 +6,9 @@ load_dotenv()
 
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
-from langchain_mcp_adapters.client import MultiServerMCPClient  
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.checkpoint.memory import InMemorySaver  
+from langgraph.graph import StateGraph
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -28,6 +30,25 @@ client = MultiServerMCPClient(
         }
     }
 )
+
+# Load the agents instructions from the markdown file
+def load_instructions():
+    readme_path = os.path.join(os.path.dirname(__file__), "instructions.md")
+    try:
+        with open(readme_path, "r", encoding="utf-8") as f:
+            instructions_text = f.read()
+    except UnicodeDecodeError:
+        # try again if there's a BOM or different utf-8 variant
+        with open(readme_path, "r", encoding="utf-8-sig") as f:
+            instructions_text = f.read()
+    except Exception as e:
+        instructions_text = f"<unable to load instructions.md: {e}>"
+    return instructions_text
+
+# Session memory
+input_messages = [
+    { "role": "system", "content": load_instructions() },
+] 
 
 # A tool to get the current date and time
 def get_current_time() -> dict:
@@ -55,20 +76,6 @@ def chat_response(prompt: str) -> str:
     model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
     return model.invoke(prompt)
 
-# Load the agents instructions from the markdown file
-def load_instructions():
-    readme_path = os.path.join(os.path.dirname(__file__), "instructions.md")
-    try:
-        with open(readme_path, "r", encoding="utf-8") as f:
-            instructions_text = f.read()
-    except UnicodeDecodeError:
-        # try again if there's a BOM or different utf-8 variant
-        with open(readme_path, "r", encoding="utf-8-sig") as f:
-            instructions_text = f.read()
-    except Exception as e:
-        instructions_text = f"<unable to load instructions.md: {e}>"
-    return instructions_text
-
 async def answer(msg, thread_id):
     total_input_tokens = 0
     total_output_tokens = 0
@@ -95,25 +102,24 @@ async def answer(msg, thread_id):
             }
         }
 
-        input_messages = [
-            { "role": "system", "content": load_instructions() },
-            { "role": "user", "content": msg }
-        ]
+        # Append newest user message
+        input_messages.append({ "role": "user", "content": msg })
 
         # invoke the agent and pass callbacks
         response = agent_executor.invoke({"messages": input_messages}, config=config)
-       
+
+        
         for msg in response["messages"]:
-            if hasattr(msg, "usage_metadata"):
+            if hasattr(msg, "usage_metadata") and msg.usage_metadata:
                 total_input_tokens += msg.usage_metadata.get("input_tokens", 0)
                 total_output_tokens += msg.usage_metadata.get("output_tokens", 0)
-            
             if hasattr(msg, "tool_calls") and msg.tool_calls:
                 for call in msg.tool_calls:
                     #print("Tool call:", call)
                     break
-
         final_message = response["messages"][-1]
+        # Remember conversation
+        input_messages.append({"role": "assistant", "content": final_message.content})
        
         return {"status": "success", "total_input_tokens_used": total_input_tokens, "total_output_tokens": total_output_tokens, "response": final_message.content}
     except Exception as e:
