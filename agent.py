@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain.chat_models import init_chat_model
-from langchain.agents import create_react_agent
+from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 AGENT_NAME = "Helsinki"
@@ -87,7 +87,7 @@ async def answer(msg, thread_id):
             chat_response
         ]
         tools.extend(mcp_tools)
-        agent_executor = create_react_agent(model, tools, debug=False)
+        agent_executor = create_agent(model, tools, debug=False)
         
         config = {
             "configurable": {
