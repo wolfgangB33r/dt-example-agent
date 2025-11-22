@@ -1,9 +1,9 @@
-pip-requirements
 langchain
 langchain-community
 langchain-mcp-adapters
 langchain-google-genai
+langchain-openai
 langgraph
-python-dotenv
+dotenv
 requests
 
