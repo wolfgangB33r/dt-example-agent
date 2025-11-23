@@ -87,7 +87,7 @@ async def answer(msg, thread_id):
             chat_response
         ]
         tools.extend(mcp_tools)
-        agent_executor = create_agent(model, tools, debug=False)
+        agent_executor = create_agent(model, tools)
         
         config = {
             "configurable": {
