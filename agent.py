@@ -2,10 +2,12 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
+import asyncio
 
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
+
 
 AGENT_NAME = "Helsinki"
 
@@ -71,7 +73,8 @@ def chat_response(prompt: str) -> str:
     model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
     return model.invoke(prompt)
 
-async def answer(msg, thread_id):
+
+async def run_agent(msg, thread_id):
     total_input_tokens = 0
     total_output_tokens = 0
     try:
@@ -80,7 +83,7 @@ async def answer(msg, thread_id):
         #model = init_chat_model("gemini-3-pro-preview", model_provider="google_genai")
         model = init_chat_model("gpt-4o", model_provider="openai")
         # 
-        mcp_tools = await client.get_tools() 
+        mcp_tools = await client.get_tools()
     
         tools=[
             get_current_time, 
@@ -101,7 +104,7 @@ async def answer(msg, thread_id):
         input_messages.append({ "role": "user", "content": msg })
 
         # invoke the agent and pass callbacks
-        response = agent_executor.invoke({"messages": input_messages}, config=config)
+        response = await agent_executor.ainvoke({"messages": input_messages}, config=config)
 
         
         for msg in response["messages"]:
@@ -130,6 +133,6 @@ if __name__ == "__main__":
         user_input = input("?: ")
         if user_input.lower() == 'exit':
             break
-        import asyncio
-        result = asyncio.run(answer(user_input, thread_id=session_id))
+        
+        result = asyncio.run(run_agent(user_input, thread_id=session_id))
         print("Response:", result['response'])
