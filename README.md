@@ -13,7 +13,6 @@ Following environment variables must be set:
 * DT_TENANT=<YOUR_DOMAIN>.live.apps.dynatrace.com
 * DT_API_TOKEN=<YOUR_PLATFORM_API_TOKEN>
 
-
 Configure the DT_API_TOKEN within your Dynatrace account management. Create a new platform token with the following permission scopes.
 * mcp-gateway:servers:invoke
 * mcp-gateway:servers:read
